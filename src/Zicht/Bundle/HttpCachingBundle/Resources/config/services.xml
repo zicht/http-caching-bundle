@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <parameters>
+        <!-- note that this priority should typically be as low as possible -->
+        <parameter key="zicht.http_caching.response_listener.priority">-245</parameter>
+        <parameter key="zicht.http_caching.response_listener.class">Zicht\Bundle\HttpCachingBundle\Http\ResponseListener</parameter>
+        <parameter key="zicht.http_caching.response_optimizer.class">Zicht\Bundle\HttpCachingBundle\Http\Optimizer\DefaultResponseOptimizer</parameter>
+    </parameters>
+
+    <services>
+        <service id="zicht.http_caching.response_listener" class="%zicht.http_caching.response_listener.class%">
+            <argument type="service" id="zicht.http_caching.response_optimizer" />
+            <tag name="kernel.event_listener" event="kernel.response" method="onKernelResponse" priority="%zicht.http_caching.response_listener.priority%" />
+        </service>
+        <service id="zicht.http_caching.response_optimizer" class="%zicht.http_caching.response_optimizer.class%">
+            <argument />
+        </service>
+    </services>
+</container>
