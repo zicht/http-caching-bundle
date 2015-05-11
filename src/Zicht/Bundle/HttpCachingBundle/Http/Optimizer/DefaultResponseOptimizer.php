@@ -60,22 +60,25 @@ class DefaultResponseOptimizer implements ResponseOptimizerInterface
             }
 
             if (null !== $defaultMaxAge) {
+                list($privateMaxAge, $publicMaxAge) = $defaultMaxAge;
 
                 // If we have cookies
                 if ($request->cookies->count() > 0) {
                     $response->headers->addCacheControlDirective('private');
-                    if ($defaultMaxAge < 0) {
-                        // consider the response uncachable if the default is < 0
-                        $response->headers->addCacheControlDirective('no-cache');
-                        $response->headers->addCacheControlDirective('must-revalidate');
-                        $response->headers->addCacheControlDirective('max-age', 0);
-                    } else {
-                        $response->headers->addCacheControlDirective('max-age', $defaultMaxAge[0]);
+                    if (null !== $privateMaxAge) {
+                        if ($privateMaxAge < 0) {
+                            // consider the response uncachable if the default is < 0
+                            $response->headers->addCacheControlDirective('no-cache');
+                            $response->headers->addCacheControlDirective('must-revalidate');
+                            $response->headers->addCacheControlDirective('max-age', 0);
+                        } else {
+                            $response->headers->addCacheControlDirective('max-age', $privateMaxAge);
+                        }
                     }
                 } else {
                     $response->headers->addCacheControlDirective('public');
-                    $response->headers->addCacheControlDirective('max-age', $defaultMaxAge[1]);
-                    $response->headers->addCacheControlDirective('s-maxage', $defaultMaxAge[1]);
+                    $response->headers->addCacheControlDirective('max-age', $publicMaxAge);
+                    $response->headers->addCacheControlDirective('s-maxage', $publicMaxAge);
                 }
             }
         }
