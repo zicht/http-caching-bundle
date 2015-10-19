@@ -62,8 +62,7 @@ class DefaultResponseOptimizer implements ResponseOptimizerInterface
             if (null !== $defaultMaxAge) {
                 list($privateMaxAge, $publicMaxAge) = $defaultMaxAge;
 
-                // If we have cookies
-                if ($request->cookies->count() > 0) {
+                if ($request->cookies->count() > 0 || $response->headers->getCookies()) {
                     $response->headers->addCacheControlDirective('private');
                     if (null !== $privateMaxAge) {
                         if ($privateMaxAge < 0) {
