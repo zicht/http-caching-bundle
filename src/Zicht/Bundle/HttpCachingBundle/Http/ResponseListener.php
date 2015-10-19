@@ -78,7 +78,7 @@ class ResponseListener
         $isEmpty = false;
         if (empty($vars)) {
             $isEmpty = true;
-        } elseif (is_object($vars) || is_array($vars)) {
+        } elseif (is_array($vars)) {
             $isEmpty = true;
             foreach ($vars as $key => $value) {
                 $isEmpty &= $this->isEmpty($value);
