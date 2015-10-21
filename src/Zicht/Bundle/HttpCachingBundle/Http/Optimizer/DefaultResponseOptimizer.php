@@ -44,6 +44,9 @@ class DefaultResponseOptimizer implements ResponseOptimizerInterface
      */
     public function optimize(Request $request, Response $response)
     {
+        if ('GET' !== $request->getMethod()) {
+            return;
+        }
         if (
             !$response->headers->getCacheControlDirective('private')
             && !$response->headers->getCacheControlDirective('public')
@@ -70,6 +73,9 @@ class DefaultResponseOptimizer implements ResponseOptimizerInterface
                             $response->headers->addCacheControlDirective('no-cache');
                             $response->headers->addCacheControlDirective('must-revalidate');
                             $response->headers->addCacheControlDirective('max-age', 0);
+                            $date = new \DateTime();
+                            $date->modify('-1 day');
+                            $response->setExpires($date);
                         } else {
                             $response->headers->addCacheControlDirective('max-age', $privateMaxAge);
                         }
