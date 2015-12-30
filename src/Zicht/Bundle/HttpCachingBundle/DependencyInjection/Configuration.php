@@ -25,7 +25,32 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
                 ->arrayNode('urls')
-                    ->prototype('array')->prototype('scalar')->end()->end()
+                    ->beforeNormalization()
+                        ->always(function($v) {
+                            $ret = [];
+                            // BC for the `string => [int, int]` format
+                            foreach ($v as $key => $settings) {
+                                if (!is_numeric($key) && is_array($settings) && count($settings) == 2) {
+                                    $ret[] = [
+                                        'pattern' => $key,
+                                        'private' => $settings[0],
+                                        'public' => $settings[1]
+                                    ];
+                                } else {
+                                    $ret[$key] = $settings;
+                                }
+                            }
+                            return $ret;
+                        })
+                    ->end()
+                    ->prototype('array')
+                        ->children()
+                            ->scalarNode('pattern')->isRequired()->end()
+                            ->scalarNode('public')->isRequired()->end()
+                            ->scalarNode('private')->isRequired()->end()
+                            ->booleanNode('client_cache')->defaultValue(false)->end()
+                        ->end()
+                    ->end()
                 ->end()
             ->end()
         ;

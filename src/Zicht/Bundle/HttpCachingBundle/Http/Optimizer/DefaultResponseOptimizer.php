@@ -53,37 +53,46 @@ class DefaultResponseOptimizer implements ResponseOptimizerInterface
             && !$response->headers->getCacheControlDirective('max-age')
             && !$response->headers->getCacheControlDirective('s-maxage')
         ) {
-            $defaultMaxAge = null;
+            $maxAgeSettings = null;
 
-            foreach ($this->urls as $pattern => $ages) {
-                if (preg_match($pattern, $request->getRequestUri())) {
-                    $defaultMaxAge = $ages;
+            foreach ($this->urls as $settings) {
+                if (preg_match($settings['pattern'], $request->getRequestUri())) {
+                    $maxAgeSettings = $settings;
                     break;
                 }
             }
 
-            if (null !== $defaultMaxAge) {
-                list($privateMaxAge, $publicMaxAge) = $defaultMaxAge;
-
+            if (null !== $maxAgeSettings) {
+                // If we have cookies, never add a shared max age.
                 if ($request->cookies->count() > 0 || $response->headers->getCookies()) {
                     $response->headers->addCacheControlDirective('private');
-                    if (null !== $privateMaxAge) {
-                        if ($privateMaxAge < 0) {
-                            // consider the response uncachable if the default is < 0
-                            $response->headers->addCacheControlDirective('no-cache');
-                            $response->headers->addCacheControlDirective('must-revalidate');
-                            $response->headers->addCacheControlDirective('max-age', 0);
-                            $date = new \DateTime();
-                            $date->modify('-1 day');
-                            $response->setExpires($date);
-                        } else {
-                            $response->headers->addCacheControlDirective('max-age', $privateMaxAge);
-                        }
+
+                    if ($response->headers->getCookies() || $maxAgeSettings['private'] < 0) {
+                        // consider the response uncachable if the default is < 0
+                        $response->headers->addCacheControlDirective('no-cache');
+                        $response->headers->addCacheControlDirective('must-revalidate');
+                        $response->headers->addCacheControlDirective('max-age', 0);
+
+                        $date = new \DateTime();
+                        $date->modify('-1 day');
+                        $response->setExpires($date);
+                    } else {
+                        $response->headers->addCacheControlDirective('max-age', $maxAgeSettings['private']);
                     }
                 } else {
                     $response->headers->addCacheControlDirective('public');
-                    $response->headers->addCacheControlDirective('max-age', $publicMaxAge);
-                    $response->headers->addCacheControlDirective('s-maxage', $publicMaxAge);
+
+                    // if we don't have cookies, we want to response to be cache,
+                    // BUT: the client must NOT cache the content locally, but revalidate with the front end proxy.
+                    if ($maxAgeSettings['client_cache']) {
+                        $response->headers->addCacheControlDirective('max-age', $maxAgeSettings['public']);
+                    } else {
+                        $response->headers->addCacheControlDirective('max-age', 0);
+                        $response->headers->addCacheControlDirective('must-revalidate');
+                    }
+
+                    // The front end proxy should use this as the max age for anonymous requests.
+                    $response->headers->addCacheControlDirective('s-maxage', $maxAgeSettings['public']);
                 }
             }
         }
