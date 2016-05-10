@@ -15,6 +15,7 @@
         <service id="zicht.http_caching.response_listener" class="%zicht.http_caching.response_listener.class%">
             <argument type="service" id="zicht.http_caching.response_optimizer" />
             <tag name="kernel.event_listener" event="kernel.response" method="onKernelResponse" priority="%zicht.http_caching.response_listener.priority%" />
+            <tag name="kernel.event_listener" event="kernel.request" method="onKernelRequest" priority="%zicht.http_caching.response_listener.priority%" />
         </service>
         <service id="zicht.http_caching.response_optimizer" class="%zicht.http_caching.response_optimizer.class%">
             <argument />

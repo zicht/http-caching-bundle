@@ -8,8 +8,10 @@ namespace Zicht\Bundle\HttpCachingBundle\Http;
 use \Symfony\Component\HttpFoundation\Request;
 use \Symfony\Component\HttpFoundation\Response;
 use \Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use \Symfony\Component\HttpKernel\HttpKernelInterface;
 
+use Zicht\Bundle\HttpCachingBundle\Http\Optimizer\CacheOptimizer;
 use \Zicht\Bundle\HttpCachingBundle\Http\Optimizer\ResponseOptimizerInterface;
 
 
@@ -26,6 +28,25 @@ class ResponseListener
     public function __construct(ResponseOptimizerInterface $optimizer)
     {
         $this->responseOptimizer = $optimizer;
+    }
+
+
+    public function onKernelRequest(GetResponseEvent $e)
+    {
+        if (!$e->isMasterRequest()) {
+            return;
+        }
+
+        if ($e->getRequest()->hasPreviousSession()) {
+            return;
+        }
+
+        foreach (explode(',', $e->getRequest()->headers->get('if-none-match')) as $eTag) {
+            if ($eTag === $this->calculateEtag($e->getRequest())) {
+                $e->setResponse(new Response('', 304, ['ETag' => $eTag]));
+                return;
+            }
+        }
     }
 
 
@@ -63,6 +84,10 @@ class ResponseListener
     protected function optimize(Request $request, Response $response)
     {
         $this->responseOptimizer->optimize($request, $response);
+
+        if (Optimizer\CacheOptimizer::consider($request, $response)) {
+            $response->headers->set('ETag', $this->calculateEtag($request));
+        }
     }
 
 
@@ -85,5 +110,16 @@ class ResponseListener
             }
         }
         return $isEmpty;
+    }
+
+    private function calculateEtag(Request $request)
+    {
+        return 'W/"' . substr(
+            sha1(
+                $request->getHttpHost() . $request->getRequestUri() . $request->getQueryString()
+            ),
+            0,
+            20
+        )  . base64_encode((string) floor(time() / 120)) . '"';
     }
 }
