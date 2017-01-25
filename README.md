@@ -3,5 +3,5 @@
 Bundle for decorating responses with HTTP caching headers based on configuration
 
 # Maintainers
-* Gerard van Helden <gerard@zicht.nl>
+* Philip Bergman <philip@zicht.nl>
 
