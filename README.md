@@ -31,5 +31,3 @@ that is sent without a Set-Cookie, in response to a request that had no
 Authorization or Cookie headers, is considered "public".
 
 # Maintainers
-* Philip Bergman <philip@zicht.nl>
-
